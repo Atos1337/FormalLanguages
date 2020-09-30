@@ -1,2 +1,6 @@
-# FormalLanguages
-FLHomeworks
+# Домашняя работа №4
+
+Для запуска тестов выполните:
+    python test.py
+Для запуска парсера выполните:
+    python parser.py <имя входного файла>
