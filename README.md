@@ -1,6 +1,10 @@
 # Домашняя работа №4
 
 Для запуска тестов выполните:
-    python test.py
+```python 
+python test.py
+```
 Для запуска парсера выполните:
-    python parser.py <имя входного файла>
+```python 
+python parser.py <имя входного файла>
+```
