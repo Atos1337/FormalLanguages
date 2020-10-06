@@ -125,7 +125,10 @@ class Parser:
     return i, True
 
 if __name__ == '__main__':
-  t, res = Parser(open(sys.argv[1]).read()).parse()
+  if sys.argv[1] == "cmd":
+    t, res = Parser(sys.argv[2]).parse()
+  else:
+    t, res = Parser(open(sys.argv[2]).read()).parse()
   if res is True:
     print("correct code")
   else:

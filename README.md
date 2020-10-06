@@ -6,5 +6,5 @@ python test.py
 ```
 Для запуска парсера выполните:
 ```python 
-python parser.py <имя входного файла>
+python parser.py <cmd/file> <код программы/имя входного файла>
 ```
