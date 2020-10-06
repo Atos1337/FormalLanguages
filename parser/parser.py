@@ -119,7 +119,7 @@ class Parser:
     i += 1
     if i == len(self.toks):
       return i, True
-    i, res = attitude(i)
+    i, res = self.attitude(i)
     if res is None:
       return i, None
     return i, True
