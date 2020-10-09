@@ -87,6 +87,7 @@ def p_error(p):
         print("SyntaxError, expected end of the declaration", file=output)
     else:
         print("SyntaxError: line %d, colon %d" % (p.lineno, p.lexpos), file=output)
+    exit()
 
 parser = yacc.yacc()
 
