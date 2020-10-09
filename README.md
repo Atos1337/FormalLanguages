@@ -1,2 +1,6 @@
-# FormalLanguages
-FLHomeworks
+# Домашняя работа №5
+```
+Для запуска парсера выполните:
+```python 
+python parse.py <имя входного файла>
+```
