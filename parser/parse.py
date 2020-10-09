@@ -84,7 +84,7 @@ def p_conj(p):
 
 def p_error(p):
     if p is None:
-        print("SyntaxError, expected end of the declaration")
+        print("SyntaxError, expected end of the declaration", file=output)
     else:
         print("SyntaxError: line %d, colon %d" % (p.lineno, p.lexpos), file=output)
 
