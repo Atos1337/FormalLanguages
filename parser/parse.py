@@ -35,23 +35,43 @@ def p_declaration(p):
         p[0] = Node("Declaration", p[1])
 
 def p_head(p):
-    '''head : ID atom
-            | ID'''
-    if len(p) == 3:
-        p[0] = Node("Head", Node("Atom", "ID " + str(p[1]), p[2]))
-    else:
-        p[0] = Node("Head", "ID " + str(p[1]))
+    '''head : funccall'''
+    p[0] = Node("Head", p[1])
 
-def p_atom(p):
-    '''atom : LBR atom RBR
-            | ID atom
-            | ID '''
+def p_funccall(p):
+    '''funccall : ID args
+                | ID'''
+    if len(p) == 2:
+        p[0] = Node("Atom", "ID " + str(p[1]))
     if len(p) == 3:
-        p[0] = Node("Atom","ID " + str(p[1]), p[2])
-    elif len(p) == 4:
+        p[0] = Node("Atom", "ID " + str(p[1]), p[2])
+
+
+def p_fib(p):
+    '''fib : LBR fib RBR
+           | funccall'''
+    if len(p) == 4:
         p[0] = p[2]
     else:
+        p[0] = p[1]
+
+def p_args(p):
+    '''args : LBR fib RBR args
+            | ID args
+            | LBR fib RBR
+            | ID'''
+    if len(p) == 5:
+        p[0] = Node("Atom", p[2], p[4])
+    elif len(p) == 3:
+        p[0] = Node("Atom", "ID " + str(p[1]), p[2])
+    elif len(p) == 2:
         p[0] = Node("Atom", "ID " + str(p[1]))
+    else:
+        p[0] = Node("Atom", p[2])
+
+def p_atom(p):
+    '''atom : fib'''
+    p[0] = p[1]
 
 def p_body(p):
     '''body : disj'''
