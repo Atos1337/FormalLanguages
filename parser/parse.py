@@ -1,16 +1,32 @@
-import ply.yacc as yacc
 import sys
+from parsita import *
 
-from lex import tokens
+def printlist(xs):
+    if len(xs) == 0:
+        return 'nil'
+    else:
+        res = 'cons (' + str(xs[0]) + ') '
+        if len(xs) == 1:
+            res += 'nil'
+        else:
+            res += '(' + printlist(xs[1:]) + ')'
+        return res
 
 class Node:
-    def __init__(self, name, *objs):
+    def __init__(self, name, objs):
         self.name = name
-        self.leaves = []
-        for i in objs:
-            self.leaves.append(i)
+        self.leaves = objs
 
     def __str__(self):
+        if self.name == "List":
+            if len(self.leaves) < 2:
+                return printlist(self.leaves)
+            if self.leaves[1] == '|':
+                return 'cons (' + str(self.leaves[0]) + ') (' + str(self.leaves[2]) + ')'
+            else:
+                return printlist(self.leaves)
+        if len(self.leaves) == 1:
+            return self.name + ' ' + str(self.leaves[0])
         res =  self.name + " ("
         for i in self.leaves:
             res += str(i) + ", "
@@ -18,101 +34,87 @@ class Node:
         res += ")"
         return res
 
-def p_prog(p):
-    '''prog : declaration prog
-            | declaration'''
-    if len(p) == 3:
-        p[0] = Node("Prog", p[1], p[2])
+def rd(x):
+    if isinstance(x, list):
+        x[0].name = "Head " + x[0].name
+        x[1].name = "Body " + x[1].name
+        return Node("RelDef", x)
     else:
-        p[0] = Node("Prog", p[1])
+        x.name = "Head " + x.name
+        return Node("RelDef", [x])
 
-def p_declaration(p):
-    '''declaration : head CONSTRUCT body POINT
-                   | head POINT'''
-    if len(p) == 5:
-        p[0] = Node("Declaration", p[1], p[3])
+def fc(x):
+    if len(x[1]) == 0:
+        return x[0]
     else:
-        p[0] = Node("Declaration", p[1])
+        return Node("Atom", [x[0]] + x[1])
 
-def p_head(p):
-    '''head : funccall'''
-    p[0] = Node("Head", p[1])
-
-def p_funccall(p):
-    '''funccall : ID args
-                | ID'''
-    if len(p) == 2:
-        p[0] = Node("Atom", "ID " + str(p[1]))
-    if len(p) == 3:
-        p[0] = Node("Atom", "ID " + str(p[1]), p[2])
-
-
-def p_fib(p):
-    '''fib : LBR fib RBR
-           | funccall'''
-    if len(p) == 4:
-        p[0] = p[2]
+def f(x):
+    if isinstance(x, list):
+        return Node("Atom", x)
     else:
-        p[0] = p[1]
+        return x
 
-def p_args(p):
-    '''args : LBR fib RBR args
-            | ID args
-            | LBR fib RBR
-            | ID'''
-    if len(p) == 5:
-        p[0] = Node("Atom", p[2], p[4])
-    elif len(p) == 3:
-        p[0] = Node("Atom", "ID " + str(p[1]), p[2])
-    elif len(p) == 2:
-        p[0] = Node("Atom", "ID " + str(p[1]))
+def Disj(x):
+   if isinstance(x, list):
+       return Node("Disj", x)
+   else:
+       return x
+
+def Conj(x):
+   if isinstance(x, list):
+       return Node("Conj", x)
+   else:
+       return x
+
+def printFile(res, output):
+    if isinstance(res, Success):
+        print(res.value, file=output)
     else:
-        p[0] = Node("Atom", p[2])
+        print(res.message, file=output)
 
-def p_atom(p):
-    '''atom : fib'''
-    p[0] = p[1]
 
-def p_body(p):
-    '''body : disj'''
-    p[0] = Node("Body", p[1])
+class Parsers(TextParsers, whitespace = r'[ \t\n\r]*'):
+    ID = reg(r'(?!module)(?!type)[a-z_][A-Za-z0-9_]*') > (lambda x: Node("ID", [x]))
+    #Переменная
+    Var = reg(r'(?!module)(?!type)[A-Z][A-Za-z0-9_]*') > (lambda x: Node("Var", [x]))
+    #База
+    RelDef = (funccall << lit(':-') & disj | funccall) << lit('.') > (lambda x: rd(x))
+    funccall = ID & rep(fib) > (lambda x: fc(x))
+    fib = lit('(') >> fib << lit(')') | b | Var | List | ID > (lambda x: f(x))
+    b = lit('(') >> (funccall | Var | List) << lit(')') > (lambda x: x)
+    finb = lit('(') >> finb << lit(')') | funccall > (lambda x: x)
+    disj = conj << ';' & disj | conj > (lambda x: Disj(x))
+    id = lit('(') >> disj << lit(')') | finb > (lambda x: x)
+    conj = id << ',' & conj | id > (lambda x: Conj(x))
+    #Модуль
+    ModDef = lit('module') >> ID << lit('.') > (lambda x: Node("Module", [x]))
+    #Типы
+    TypeDef = lit('type') >> ID & Type << lit('.') > (lambda x: Node("Typedef", x))
+    Type = rep1sep((lit('(') >> Type << lit(')') | finb | Var), lit('->')) > (lambda x: Node("Type", x))
+    #Списки
+    List = lit('[') >> repsep((List | funccall | Var), ',') << lit(']') | lit('[') >> (Var | funccall | List) & lit('|') & Var << lit(']') > (lambda x: Node("List", x))
+    #Парсер всей программы
+    prog = rep(ModDef) & rep(TypeDef) & rep(RelDef) > (lambda x: Node("Prog", x[0] + x[1] + x[2]))
 
-def p_disj(p):
-    '''disj : conj DISJ disj
-            | conj'''
-    if len(p) == 4:
-        p[0] = Node("Disj", p[1], p[3])
-    else:
-        p[0] = p[1]
+if len(sys.argv) == 3:
+    output = open(sys.argv[2] + '.out', 'w')
+else:
+    output = open(sys.argv[1] + '.out', 'w')
 
-def p_id(p):
-    '''id : LBR disj RBR
-          | atom'''
-    if len(p) == 4:
-        p[0] = p[2]
-    else:
-        p[0] = p[1]
-
-def p_conj(p):
-    '''conj : id CONJ conj
-            | id
-    '''
-    if len(p) == 4:
-        p[0] = Node("Conj", p[1], p[3])
-    else:
-        p[0] = p[1]
-
-def p_error(p):
-    if p is None:
-        print("SyntaxError, expected end of the declaration", file=output)
-    else:
-        print("SyntaxError: line %d, colon %d" % (p.lineno, p.lexpos), file=output)
-    exit()
-
-parser = yacc.yacc()
-
-s = open(sys.argv[1]).read()
-output = sys.argv[1] + ".out"
-output = open(output, 'w')
-result = parser.parse(s)
-print(result, file=output)
+if sys.argv[1] == '--atom':
+    printFile(Parsers.funccall.parse(open(sys.argv[2]).read()), output)
+elif sys.argv[1] == '--typeexpr':
+    printFile(Parsers.TypeDef.parse(open(sys.argv[2]).read()), output)
+elif sys.argv[1] == '--type':
+    printFile(Parsers.Type.parse(open(sys.argv[2]).read()), output)
+elif sys.argv[1] == '--module':
+    printFile(Parsers.ModDef.parse(open(sys.argv[2]).read()), output)
+elif sys.argv[1] == '--relation':
+    printFile(Parsers.RelDef.parse(open(sys.argv[2]).read()), output)
+elif sys.argv[1] == '--list':
+    printFile(Parsers.List.parse(open(sys.argv[2]).read()), output)
+elif sys.argv[1] == '--prog':
+    printFile(Parsers.prog.parse(open(sys.argv[2]).read()), output)
+else:
+    printFile(Parsers.prog.parse(open(sys.argv[1]).read()), output)
