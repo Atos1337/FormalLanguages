@@ -26,7 +26,7 @@ class Node:
             else:
                 return printlist(self.leaves)
         if len(self.leaves) == 1:
-            if (self.name != "ID" and self.name != "Var" and self.leaves[0].name == self.name or self.name == "Type" and len(self.leaves[0].leaves) == 1):
+            if (self.name == "Type" and (len(self.leaves[0].leaves) == 1 or self.leaves[0].name == self.name)):
                 return str(self.leaves[0])
             return self.name + ' ' + str(self.leaves[0])
         res =  self.name + " ("
