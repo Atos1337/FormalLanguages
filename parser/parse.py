@@ -90,9 +90,9 @@ class Parsers(TextParsers, whitespace = r'[ \t\n\r]*'):
     id = lit('(') >> disj << lit(')') | finb > (lambda x: x)
     conj = id << ',' & conj | id > (lambda x: Conj(x))
     #Модуль
-    ModDef = lit('module') >> ID << lit('.') > (lambda x: Node("Module", [x]))
+    ModDef = reg(r'\bmodule\b') >> ID << lit('.') > (lambda x: Node("Module", [x]))
     #Типы
-    TypeDef = lit('type') >> ID & Type << lit('.') > (lambda x: Node("Typedef", x))
+    TypeDef = reg(r'\btype\b') >> ID & Type << lit('.') > (lambda x: Node("Typedef", x))
     Type = rep1sep((lit('(') >> Type << lit(')') | funccall | Var), lit('->')) > (lambda x: Node("Type", x))
     #Списки
     List = lit('[') >> repsep((List | funccall | Var), ',') << lit(']') | lit('[') >> (Var | funccall | List) & lit('|') & Var << lit(']') > (lambda x: Node("List", x))

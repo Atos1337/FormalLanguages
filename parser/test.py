@@ -66,6 +66,9 @@ assert not isinstance(Parsers.TypeDef.parse('tupe x o.'), Success)
 
 #list
 assert isinstance(Parsers.List.parse('[]'), Success)
+assert isinstance(Parsers.List.parse('[a]'), Success)
+assert not isinstance(Parsers.List.parse('[A, B,]'), Success)
+assert not isinstance(Parsers.List.parse(']['), Success)
 assert isinstance(Parsers.List.parse('[X, Y, Z]'), Success)
 assert isinstance(Parsers.List.parse('[a (b c), d, Z]'), Success)
 assert not isinstance(Parsers.List.parse('[,]a, b, c['), Success)
@@ -76,4 +79,13 @@ assert not isinstance(Parsers.List.parse('[H | A b c]'), Success)
 assert isinstance(Parsers.List.parse('[[X | T] | T]'), Success)
 assert isinstance(Parsers.List.parse('[[a], [b,c]]'), Success)
 
+#module
+assert isinstance(Parsers.ModDef.parse('module name.'), Success)
+assert isinstance(Parsers.ModDef.parse('\t\nmodule\n\n name_123.'), Success)
+assert not isinstance(Parsers.ModDef.parse('modulo name.'), Success)
+assert not isinstance(Parsers.ModDef.parse('module module.'), Success)
+assert not isinstance(Parsers.ModDef.parse('modulename.'), Success)
+assert not isinstance(Parsers.ModDef.parse('mod ule name.'), Success)
+assert not isinstance(Parsers.ModDef.parse('module 123name.'), Success)
+assert not isinstance(Parsers.ModDef.parse('module name!'), Success)
 
