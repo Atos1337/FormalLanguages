@@ -26,6 +26,8 @@ class Node:
             else:
                 return printlist(self.leaves)
         if len(self.leaves) == 1:
+            if (self.name != "ID" and self.name != "Var" and self.leaves[0].name == self.name or self.name == "Type" and len(self.leaves[0].leaves) == 1):
+                return str(self.leaves[0])
             return self.name + ' ' + str(self.leaves[0])
         res =  self.name + " ("
         for i in self.leaves:
@@ -91,30 +93,31 @@ class Parsers(TextParsers, whitespace = r'[ \t\n\r]*'):
     ModDef = lit('module') >> ID << lit('.') > (lambda x: Node("Module", [x]))
     #Типы
     TypeDef = lit('type') >> ID & Type << lit('.') > (lambda x: Node("Typedef", x))
-    Type = rep1sep((lit('(') >> Type << lit(')') | finb | Var), lit('->')) > (lambda x: Node("Type", x))
+    Type = rep1sep((lit('(') >> Type << lit(')') | funccall | Var), lit('->')) > (lambda x: Node("Type", x))
     #Списки
     List = lit('[') >> repsep((List | funccall | Var), ',') << lit(']') | lit('[') >> (Var | funccall | List) & lit('|') & Var << lit(']') > (lambda x: Node("List", x))
     #Парсер всей программы
     prog = rep(ModDef) & rep(TypeDef) & rep(RelDef) > (lambda x: Node("Prog", x[0] + x[1] + x[2]))
 
-if len(sys.argv) == 3:
-    output = open(sys.argv[2] + '.out', 'w')
-else:
-    output = open(sys.argv[1] + '.out', 'w')
-
-if sys.argv[1] == '--atom':
-    printFile(Parsers.funccall.parse(open(sys.argv[2]).read()), output)
-elif sys.argv[1] == '--typeexpr':
-    printFile(Parsers.TypeDef.parse(open(sys.argv[2]).read()), output)
-elif sys.argv[1] == '--type':
-    printFile(Parsers.Type.parse(open(sys.argv[2]).read()), output)
-elif sys.argv[1] == '--module':
-    printFile(Parsers.ModDef.parse(open(sys.argv[2]).read()), output)
-elif sys.argv[1] == '--relation':
-    printFile(Parsers.RelDef.parse(open(sys.argv[2]).read()), output)
-elif sys.argv[1] == '--list':
-    printFile(Parsers.List.parse(open(sys.argv[2]).read()), output)
-elif sys.argv[1] == '--prog':
-    printFile(Parsers.prog.parse(open(sys.argv[2]).read()), output)
-else:
-    printFile(Parsers.prog.parse(open(sys.argv[1]).read()), output)
+if __name__ == "__main__":
+    output = ''
+    if len(sys.argv) == 3:
+        output = open(sys.argv[2] + '.out', 'w')
+    else:
+        output = open(sys.argv[1] + '.out', 'w')
+    if sys.argv[1] == '--atom':
+        printFile(Parsers.funccall.parse(open(sys.argv[2]).read()), output)
+    elif sys.argv[1] == '--typeexpr':
+        printFile(Parsers.Type.parse(open(sys.argv[2]).read()), output)
+    elif sys.argv[1] == '--type':
+        printFile(Parsers.TypeDef.parse(open(sys.argv[2]).read()), output)
+    elif sys.argv[1] == '--module':
+        printFile(Parsers.ModDef.parse(open(sys.argv[2]).read()), output)
+    elif sys.argv[1] == '--relation':
+        printFile(Parsers.RelDef.parse(open(sys.argv[2]).read()), output)
+    elif sys.argv[1] == '--list':
+        printFile(Parsers.List.parse(open(sys.argv[2]).read()), output)
+    elif sys.argv[1] == '--prog':
+        printFile(Parsers.prog.parse(open(sys.argv[2]).read()), output)
+    else:
+        printFile(Parsers.prog.parse(open(sys.argv[1]).read()), output)
